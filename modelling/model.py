@@ -237,7 +237,7 @@ class HIERBERTTransformer(Module):
     def __init__(self, d_model: int = 512, nhead: int = 8, num_encoder_layers: int = 6,
                  d_word_vec: int = 512, dim_feedforward: int = 2048, dropout: float = 0.1,
                  activation: str = "gelu", custom_encoder: Optional[Any] = None, custom_decoder: Optional[Any] = None,
-                 layer_norm_eps: float = 1e-5, vocab_size: int = 2, pad_index: int = 0) -> None:  # ,pred_outs=True
+                 layer_norm_eps: float = 1e-5, vocab_size: int = 2, pad_index: int = 0, sep_token_id: int = 102) -> None:  # ,pred_outs=True
         super(HIERBERTTransformer, self).__init__()
 
         # Word Emb
@@ -259,7 +259,7 @@ class HIERBERTTransformer(Module):
         self.nhead = nhead
 
         self.pad_index = pad_index
-
+        self.sep_token_id = sep_token_id
         self.init_weights()
 
     def init_weights(self) -> None:
@@ -409,15 +409,15 @@ class HIERBERTTransformer(Module):
             if p.dim() > 1:
                 xavier_uniform_(p)
 
-    # import torch
-
     def convert_input_ids_to_token_type_ids(self, input_ids):
         token_type_ids = torch.zeros_like(input_ids)
-        sep_token_idx = (input_ids == 102).nonzero(as_tuple=True)
 
-        for i in range(len(sep_token_idx[0])):
-            row_idx = sep_token_idx[0][i]
-            sep_idx = sep_token_idx[1][i]
-            token_type_ids[row_idx, (sep_idx.item() + 1):] = 1
+        sep_indices = [i for i, token_id in enumerate(input_ids) if token_id == self.sep_token_id]
+
+        # Increment the token type ID after each sep token
+        prev_index = -1
+        for i, index in enumerate(sep_indices):
+            token_type_ids[prev_index + 1:index + 1] = torch.tensor([i] * (index - prev_index))
+            prev_index = index
 
         return token_type_ids
