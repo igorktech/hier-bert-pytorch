@@ -411,7 +411,7 @@ class HIERBERTTransformer(Module):
                 xavier_uniform_(p)
 
     def convert_input_ids_to_token_type_ids(self, input_ids):
-        input_ids_tensor =  torch.stack(input_ids)
+        input_ids_tensor =  input_ids
         token_type_ids = torch.zeros_like(input_ids_tensor)
 
         sep_indices = torch.nonzero(input_ids_tensor == self.sep_token_id)
