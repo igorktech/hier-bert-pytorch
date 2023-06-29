@@ -237,7 +237,8 @@ class HIERBERTTransformer(Module):
     def __init__(self, d_model: int = 512, nhead: int = 8, num_encoder_layers: int = 6,
                  d_word_vec: int = 512, dim_feedforward: int = 2048, dropout: float = 0.1,
                  activation: str = "gelu", custom_encoder: Optional[Any] = None, custom_decoder: Optional[Any] = None,
-                 layer_norm_eps: float = 1e-5, vocab_size: int = 2, pad_index: int = 0, sep_token_id: int = 102) -> None:  # ,pred_outs=True
+                 layer_norm_eps: float = 1e-5, vocab_size: int = 2, pad_index: int = 0,
+                 sep_token_id: int = 102) -> None:  # ,pred_outs=True
         super(HIERBERTTransformer, self).__init__()
 
         # Word Emb
@@ -412,12 +413,13 @@ class HIERBERTTransformer(Module):
     def convert_input_ids_to_token_type_ids(self, input_ids):
         token_type_ids = torch.zeros_like(input_ids)
 
-        sep_indices = [i for i, token_id in enumerate(input_ids) if torch.eq(token_id, self.sep_token_id)]
+        sep_indices = torch.nonzero(input_ids == self.sep_token_id)
 
         # Increment the token type ID after each sep token
-        prev_index = -1
-        for i, index in enumerate(sep_indices):
-            token_type_ids[prev_index + 1:index + 1] = torch.tensor([i] * (index - prev_index))
-            prev_index = index
+        for row, row_tensor in enumerate(sep_indices):
+            prev_index = -1
+            for type_id, index in enumerate(row_tensor):
+                token_type_ids[row, prev_index + 1:index + 1] = torch.tensor([type_id] * (index - prev_index))
+                prev_index = index
 
         return token_type_ids
