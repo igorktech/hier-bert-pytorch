@@ -325,7 +325,7 @@ class HIERBERTTransformer(Module):
 
         if token_type_ids is None:
             # Convert input_ids to token type IDs
-            token_type_ids = self.convert_input_ids_to_token_type_ids(input_ids)
+            token_type_ids = self.convert_input_ids_to_token_type_ids(torch.tensor(input_ids))
             # print(token_type_ids.shape)
 
         src_key_padding_mask = torch.logical_not(attention_mask)
