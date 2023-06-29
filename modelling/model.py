@@ -411,16 +411,14 @@ class HIERBERTTransformer(Module):
                 xavier_uniform_(p)
 
     def convert_input_ids_to_token_type_ids(self, input_ids):
-        input_ids_tensor =  input_ids
-        token_type_ids = torch.zeros_like(input_ids_tensor)
+        token_type_ids = torch.zeros_like(input_ids)
 
-        sep_indices = torch.nonzero(input_ids_tensor == self.sep_token_id)
-
-        # Increment the token type ID after each sep token
-        for row, row_tensor in enumerate(sep_indices):
+        for row, row_tensor in enumerate(input_ids):
+            sep_indices = torch.nonzero(row_tensor == self.sep_token_id)
             prev_index = -1
-            for type_id, index in enumerate(row_tensor):
-                token_type_ids[row, prev_index + 1:index + 1] = torch.tensor([type_id] * (index - prev_index))
+            for type_id, index in enumerate(sep_indices):
+                print(index)
+                token_type_ids[row, prev_index + 1:index + 1] = type_id
                 prev_index = index
 
         return token_type_ids
