@@ -417,7 +417,6 @@ class HIERBERTTransformer(Module):
             sep_indices = torch.nonzero(row_tensor == self.sep_token_id)
             prev_index = -1
             for type_id, index in enumerate(sep_indices):
-                print(index)
                 token_type_ids[row, prev_index + 1:index + 1] = type_id
                 prev_index = index
 
