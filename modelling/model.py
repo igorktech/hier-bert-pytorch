@@ -412,7 +412,7 @@ class HIERBERTTransformer(Module):
     def convert_input_ids_to_token_type_ids(self, input_ids):
         token_type_ids = torch.zeros_like(input_ids)
 
-        sep_indices = [i for i, token_id in enumerate(input_ids) if token_id == self.sep_token_id]
+        sep_indices = [i for i, token_id in enumerate(input_ids) if torch.eq(token_id, self.sep_token_id)]
 
         # Increment the token type ID after each sep token
         prev_index = -1
