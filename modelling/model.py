@@ -325,7 +325,7 @@ class HIERBERTTransformer(Module):
 
         if token_type_ids is None:
             # Convert input_ids to token type IDs
-            token_type_ids = self.convert_input_ids_to_token_type_ids(input_ids.tolist())
+            token_type_ids = self.convert_input_ids_to_token_type_ids(input_ids)
             # print(token_type_ids.shape)
 
         src_key_padding_mask = torch.logical_not(attention_mask)
@@ -411,7 +411,7 @@ class HIERBERTTransformer(Module):
                 xavier_uniform_(p)
 
     def convert_input_ids_to_token_type_ids(self, input_ids):
-        input_ids_tensor = torch.tensor(input_ids)
+        input_ids_tensor =  torch.stack(input_ids)
         token_type_ids = torch.zeros_like(input_ids_tensor)
 
         sep_indices = torch.nonzero(input_ids_tensor == self.sep_token_id)
