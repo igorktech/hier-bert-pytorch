@@ -7,8 +7,8 @@ WARMUP_STEPS = 100
 
 USE_MLM = True
 MLM_PROB = 0.15
-DATASET_PATH = '/content/drive/MyDrive/Igor Kuzmin Master Thesis/BERT_pretraining_dataset/OpenSubtitles/OpenDialog2_4m.txt'
-OUTPUT_DIR = '/content/drive/MyDrive/Igor Kuzmin Master Thesis/BERT_pretraining_dataset/MODEL/'
+DATASET_PATH =
+OUTPUT_DIR = 
 OVERWRITE_OUTPUT_DIR = True
 NUM_TRAIN_EPOCHS=10
 PER_DEVICE_TRAIN_BATCH_SIZE = 256
