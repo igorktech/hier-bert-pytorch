@@ -13,6 +13,8 @@ import argparse
 
 TOKENIZER_DIR = '../data/tokenizer-sp-hf'
 DEFAULT_FILE_PATH = "../data/dataset_raw.txt.xz"
+
+
 def main():
     """ set default hyperparams in default_hyperparams.py """
     parser = argparse.ArgumentParser()

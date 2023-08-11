@@ -19,6 +19,11 @@ from transformers import BertForMaskedLM, BertForSequenceClassification
 
 from .configuration_hierbert import HierBertConfig
 
+import warnings
+
+# Turn off all warnings
+warnings.filterwarnings("ignore")
+
 
 # Define masking
 def gen_encoder_ut_mask(src_seq, input_mask, utt_loc):
@@ -68,6 +73,7 @@ def get_hier_encoder_mask(src_seq, input_mask, utt_loc, type: str):
         raise Exception("Not used for BERT")
 
     return None
+
 
 def _get_clones(module, N):
     return ModuleList([copy.deepcopy(module) for i in range(N)])
@@ -295,15 +301,34 @@ class HierBert(Module):
 
         enc_inp = self.word_emb(src.transpose(0, 1)) + self.post_word_emb.forward_by_index(pe_utt_loc).transpose(0, 1)
 
+        # Basic config
+        # for i, layer in enumerate(self.enc_layers):
+        #     if i == self.config.num_hidden_layers // 2:
+        #         # Positional Embedding for Context Encoder
+        #         enc_inp = enc_inp + self.post_word_emb(enc_inp.transpose(0, 1)).transpose(0, 1)
+        #     if i < self.config.num_hidden_layers // 2:
+        #         enc_inp = layer(enc_inp,
+        #                         src_key_padding_mask=src_key_padding_mask,
+        #                         src_mask=enc_mask_utt.float())
+        #     else:
+        #         enc_inp = layer(enc_inp,
+        #                         src_key_padding_mask=src_key_padding_mask,
+        #                         src_mask=enc_mask_ct)
+
+        # TODO: add layers configurations support and variations setup
+        # interleaved config (I3)
         for i, layer in enumerate(self.enc_layers):
-            if i == self.config.num_hidden_layers // 2:
-                # Positional Embedding for Context Encoder
-                enc_inp = enc_inp + self.post_word_emb(enc_inp.transpose(0, 1)).transpose(0, 1)
-            if i < self.config.num_hidden_layers // 2:
+            if i % (2 + 1) < 2:
+                # Shared encoders or Segment-wise encoders
+                # print("SWE")
                 enc_inp = layer(enc_inp,
                                 src_key_padding_mask=src_key_padding_mask,
                                 src_mask=enc_mask_utt.float())
             else:
+                # Positional Embedding for Context Encoder if few connected CSE  use it before
+                enc_inp = enc_inp + self.post_word_emb(enc_inp.transpose(0, 1)).transpose(0, 1)
+                # Context encoder or Cross-segment encoders
+                # print("CSE")
                 enc_inp = layer(enc_inp,
                                 src_key_padding_mask=src_key_padding_mask,
                                 src_mask=enc_mask_ct)
@@ -391,6 +416,7 @@ class HierBertModel(PreTrainedModel):
 
 class HierBertForMaskedLM(BertForMaskedLM):
     config_class = HierBertConfig
+
     def __init__(self, config):
         super().__init__(config)
         self.bert = HierBertModel(config)
@@ -398,6 +424,7 @@ class HierBertForMaskedLM(BertForMaskedLM):
 
 class HierBertForSequenceClassification(BertForSequenceClassification):
     config_class = HierBertConfig
+
     def __init__(self, config):
         super().__init__(config)
         self.bert = HierBertModel(config)

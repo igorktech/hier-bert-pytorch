@@ -1,13 +1,14 @@
 from transformers import PretrainedConfig
 from transformers.utils import logging
 
-
 logger = logging.get_logger(__name__)
 
 HIERBERT_PRETRAINED_CONFIG_ARCHIVE_MAP = {
     "igorktech/custom4": "https://huggingface.co/igorktech/custom4/resolve/main/config.json",
     "igorktech/custom4": "https://huggingface.co/igorktech/custom4/resolve/main/config.json",
 }
+
+
 class HierBertConfig(PretrainedConfig):
     r"""
         This is the configuration class to store the configuration of a [`HierBertModel`]. It is used to
@@ -68,7 +69,7 @@ class HierBertConfig(PretrainedConfig):
             self,
             vocab_size=32000,
             hidden_size=512,
-            num_hidden_layers=4,
+            num_hidden_layers=6,
             num_attention_heads=8,
             intermediate_size=2048,
             hidden_act="gelu",
@@ -84,11 +85,11 @@ class HierBertConfig(PretrainedConfig):
             use_cache=True,
             classifier_dropout=None,
             auto_map={
-                         "AutoConfig": "configuration_hierbert.HierBertConfig",
-                         "AutoModel": "modelling_hierbert.HierBertModel",
-                         "AutoModelForMaskedLM": "modelling_hierbert.HierBertForMaskedLM",
-                         "AutoModelForSequenceClassification": "modelling_hierbert.HierBertForSequenceClassification",
-                     },
+                "AutoConfig": "configuration_hierbert.HierBertConfig",
+                "AutoModel": "modelling_hierbert.HierBertModel",
+                "AutoModelForMaskedLM": "modelling_hierbert.HierBertForMaskedLM",
+                "AutoModelForSequenceClassification": "modelling_hierbert.HierBertForSequenceClassification",
+            },
             **kwargs,
     ):
         super().__init__(

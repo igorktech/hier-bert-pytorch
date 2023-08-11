@@ -8,14 +8,14 @@ from transformers import AlbertTokenizer
 
 from hierbert_model.configuration_hierbert import HierBertConfig
 
-# We will use pretrained AlBert tokenizer
+# We will use pretrained AlBert tokenizer just for testing
 tokenizer_name = 'albert-base-v2'
 tokenizer = AlbertTokenizer.from_pretrained(tokenizer_name)
 
-model_name = "igorktech/custom"
+model_name = "name_or_path"
 
-# Optional to binding code for config.json before publishing
 model = HierBertModel(HierBertConfig())
+# Optional to binding code for config.json before publishing
 HierBertConfig.register_for_auto_class()
 HierBertModel.register_for_auto_class("AutoModel")
 HierBertForSequenceClassification.register_for_auto_class("AutoModelForSequenceClassification")
@@ -25,7 +25,6 @@ HierBertForMaskedLM.register_for_auto_class("AutoModelForMaskedLM")
 # model.model.load_state_dict(pretrained_model.state_dict())
 
 model.push_to_hub(model_name)
-
 
 # Example input
 text = "Hello, how are you? [SEP] I am fine thank you. [SEP] How was your weekend? [SEP]"
