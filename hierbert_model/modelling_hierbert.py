@@ -13,10 +13,61 @@ from torch.nn.modules.dropout import Dropout
 from torch.nn.modules.linear import Linear
 from torch.nn.modules.normalization import LayerNorm
 
-from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
+from transformers.modeling_outputs import BaseModelOutputWithPooling
+from transformers import PreTrainedModel
+from transformers import BertForMaskedLM, BertForSequenceClassification
 
-from .hier_masks import get_hier_encoder_mask
+from .configuration_hierbert import HierBertConfig
 
+
+# Define masking
+def gen_encoder_ut_mask(src_seq, input_mask, utt_loc):
+    def _gen_mask_hierarchical(A, src_pad_mask):
+        # A: (bs, 100, 100); 100 is max_len*2 same as input_ids
+        return ~(2 * A == (A + A.transpose(1, 2))).bool()
+
+    enc_mask_utt = _gen_mask_hierarchical(utt_loc.unsqueeze(1).expand(-1, src_seq.shape[1], -1), input_mask)
+    return enc_mask_utt
+
+
+def _get_pe_inputs(src_seq, input_mask, utt_loc):
+    pe_utt_loc = torch.zeros(utt_loc.shape, device=utt_loc.device)
+    for i in range(1, utt_loc.shape[1]):  # time
+        _logic = (utt_loc[:, i] == utt_loc[:, i - 1]).float()
+        pe_utt_loc[:, i] = pe_utt_loc[:, i - 1] + _logic - (1 - _logic) * pe_utt_loc[:, i - 1]
+    return pe_utt_loc
+
+
+def _CLS_masks(src_seq, input_mask, utt_loc):
+    # HT-Encoder
+    pe_utt_loc = _get_pe_inputs(src_seq, input_mask, utt_loc)
+
+    # UT-MASK
+    enc_mask_utt = gen_encoder_ut_mask(src_seq, input_mask, utt_loc)
+
+    # CT-MASK
+    enc_mask_ct = ((pe_utt_loc + input_mask) != 0).unsqueeze(1).expand(-1, src_seq.shape[1], -1)  # HIER-CLS style
+
+    return pe_utt_loc, enc_mask_utt, enc_mask_ct
+
+
+def get_hier_encoder_mask(src_seq, input_mask, utt_loc, type: str):
+    # Padding correction
+    # No token other than padding should attend to padding
+    # But padding needs to attend to padding tokens for numerical stability reasons
+    utt_loc = utt_loc - 2 * input_mask * utt_loc
+
+    # CT-Mask type
+    assert type in ["hier", "cls", "full"]
+
+    if type == "hier":  # HIER: Context through final utterance
+        raise Exception("Not used for BERT")
+    elif type == "cls":  # HIER-CLS: Context through cls tokens
+        return _CLS_masks(src_seq, input_mask, utt_loc)
+    elif type == "full":  # Ut-mask only, CT-mask: Full attention
+        raise Exception("Not used for BERT")
+
+    return None
 
 def _get_clones(module, N):
     return ModuleList([copy.deepcopy(module) for i in range(N)])
@@ -33,15 +84,17 @@ def _get_activation_fn(activation):
 
 class PositionalEmbedding(torch.nn.Module):
 
-    def __init__(self, d_model, max_len=512):
+    def __init__(self, config):
         super().__init__()
 
+        self.max_len = config.max_position_embeddings
+        self.d_model = config.hidden_size
         # Compute the positional encodings once in log space.
-        pe = torch.zeros(max_len, d_model).float()
+        pe = torch.zeros(self.max_len, self.d_model).float()
         pe.require_grad = False
 
-        position = torch.arange(0, max_len).float().unsqueeze(1)
-        div_term = (torch.arange(0, d_model, 2).float() * -(math.log(10000.0) / d_model)).exp()
+        position = torch.arange(0, self.max_len).float().unsqueeze(1)
+        div_term = (torch.arange(0, self.d_model, 2).float() * -(math.log(10000.0) / self.d_model)).exp()
 
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
@@ -77,24 +130,23 @@ class TransformerEncoderLayer(Module):
         >>> out = encoder_layer(src)
     """
 
-    def __init__(self, d_model, nhead, dim_feedforward=3072, dropout=0.1, activation="gelu", layer_norm_eps=1e-5,
-                 norm_first=True):
+    def __init__(self, config):
         super(TransformerEncoderLayer, self).__init__()
 
-        self.self_attn = MultiheadAttention(d_model, nhead, dropout=dropout)
+        self.self_attn = MultiheadAttention(config.hidden_size,
+                                            config.num_attention_heads,
+                                            dropout=config.attention_probs_dropout_prob)
         # Implementation of Feedforward model
-        self.linear1 = Linear(d_model, dim_feedforward)
-        self.dropout = Dropout(dropout)
-        self.linear2 = Linear(dim_feedforward, d_model)
+        self.linear1 = Linear(config.hidden_size, config.intermediate_size)
+        self.dropout = Dropout(config.hidden_dropout_prob)
+        self.linear2 = Linear(config.intermediate_size, config.hidden_size)
 
-        self.norm1 = LayerNorm(d_model, eps=layer_norm_eps)
-        self.norm2 = LayerNorm(d_model, eps=layer_norm_eps)
-        self.dropout1 = Dropout(dropout)
-        self.dropout2 = Dropout(dropout)
+        self.norm1 = LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
+        self.norm2 = LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
+        self.dropout1 = Dropout(config.hidden_dropout_prob)
+        self.dropout2 = Dropout(config.hidden_dropout_prob)
 
-        self.activation = _get_activation_fn(activation)
-
-        self.norm_first = norm_first
+        self.activation = _get_activation_fn(config.hidden_act)
 
     def __setstate__(self, state):
         if 'activation' not in state:
@@ -111,29 +163,20 @@ class TransformerEncoderLayer(Module):
         Shape:
             see the docs in Transformer class.
         """
-        if self.norm_first:
-            src_mask = src_mask.repeat(self.self_attn.num_heads, 1, 1)
-            src = self.norm1(src)
-            src2 = self.self_attn(src, src, src, attn_mask=src_mask,
-                                  key_padding_mask=src_key_padding_mask)[0]
-            src = src + self.dropout1(src2)
-            src = self.norm2(src)
-            src2 = self.linear2(self.dropout(self.activation(self.linear1(src))))
-            src = src + self.dropout2(src2)
-        else:
-            src_mask = src_mask.repeat(self.self_attn.num_heads, 1, 1)
-            src2 = self.self_attn(src, src, src, attn_mask=src_mask,
-                                  key_padding_mask=src_key_padding_mask)[0]
-            src = src + self.dropout1(src2)
-            src = self.norm1(src)
-            src2 = self.linear2(self.dropout(self.activation(self.linear1(src))))
-            src = src + self.dropout2(src2)
-            src = self.norm2(src)
+        # PreLayerNorm
+        src_mask = src_mask.repeat(self.self_attn.num_heads, 1, 1)
+        src = self.norm1(src)
+        src2 = self.self_attn(src, src, src, attn_mask=src_mask,
+                              key_padding_mask=src_key_padding_mask)[0]
+        src = src + self.dropout1(src2)
+        src = self.norm2(src)
+        src2 = self.linear2(self.dropout(self.activation(self.linear1(src))))
+        src = src + self.dropout2(src2)
 
         return src
 
 
-class HIERBERTTransformer(Module):
+class HierBert(Module):
     r"""A transformer model. User is able to modify the attributes as needed. The architecture
     is based on the paper "Attention Is All You Need". Ashish Vaswani, Noam Shazeer,
     Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Lukasz Kaiser, and
@@ -159,41 +202,29 @@ class HIERBERTTransformer(Module):
     # https://github.com/pytorch/examples/tree/master/word_language_model
     """
 
-    def __init__(self, d_model: int = 512, nhead: int = 8, num_encoder_layers: int = 6,
-                 d_word_vec: int = 512, dim_feedforward: int = 2048, dropout: float = 0.1,
-                 activation: str = "gelu", custom_encoder: Optional[Any] = None, custom_decoder: Optional[Any] = None,
-                 layer_norm_eps: float = 1e-5, vocab_size: int = 2, pad_index: int = 0,
-                 sep_token_id: int = 102) -> None:  # ,pred_outs=True
-        super(HIERBERTTransformer, self).__init__()
-
+    def __init__(self, config) -> None:
+        super(HierBert, self).__init__()
+        self.config = config
         # Word Emb
-        self.word_emb = torch.nn.Embedding(vocab_size, d_word_vec, padding_idx=pad_index)
+        self.word_emb = torch.nn.Embedding(config.vocab_size,
+                                           config.hidden_size,
+                                           padding_idx=config.pad_token_id)
 
         # Pos Emb
-        self.post_word_emb = PositionalEmbedding(d_model=d_word_vec)
+        self.post_word_emb = PositionalEmbedding(config)
 
         # Encoder
-        encoder_layer = TransformerEncoderLayer(d_model, nhead, dim_feedforward, dropout, activation, layer_norm_eps)
-        encoder_norm = LayerNorm(d_model, eps=layer_norm_eps)
-        self.enc_layers = _get_clones(encoder_layer, num_encoder_layers)  # ModuleList
-        self.num_layers_e = num_encoder_layers
-        self.norm_e = encoder_norm
+        self.enc_layers = _get_clones(TransformerEncoderLayer(config),
+                                      config.num_hidden_layers)  # ModuleList
+        self.norm_e = LayerNorm(config.hidden_size,
+                                eps=config.layer_norm_eps)
 
         self._reset_parameters()
-
-        self.d_model = d_model
-        self.nhead = nhead
-
-        self.pad_index = pad_index
-        self.sep_token_id = sep_token_id
         self.init_weights()
 
     def init_weights(self) -> None:
         initrange = 0.1
         self.word_emb.weight.data.uniform_(-initrange, initrange)
-        # self.pred_outs=pred_outs
-
-        # self.config.use_return_dict = False
 
     # TODO: fix return dict
     def forward(self, input_ids: Tensor,
@@ -201,11 +232,8 @@ class HIERBERTTransformer(Module):
                 token_type_ids: Optional[Tensor] = None,
                 ct_mask_type: str = "cls",
                 memory_key_padding_mask: Optional[Tensor] = None,
-                labels=None,  # mlm
-                next_sentence_label=None,  # nsp
-                return_dict=True,
                 **kwargs
-                ) -> Tensor:
+                ):
         r"""Take in and process masked source/target sequences.
         Args:
             input_ids/src: the sequence to the encoder (required).
@@ -251,11 +279,10 @@ class HIERBERTTransformer(Module):
         if token_type_ids is None:
             # Convert input_ids to token type IDs
             token_type_ids = self.convert_input_ids_to_token_type_ids(input_ids)
-            # print(token_type_ids.shape)
 
         src_key_padding_mask = torch.logical_not(attention_mask)
         utt_indices = token_type_ids
-        # print(src.shape, src_key_padding_mask.shape,utt_indices.shape)
+
         pe_utt_loc, enc_mask_utt, enc_mask_ct = get_hier_encoder_mask(src,
                                                                       src_key_padding_mask,
                                                                       utt_indices,
@@ -269,10 +296,10 @@ class HIERBERTTransformer(Module):
         enc_inp = self.word_emb(src.transpose(0, 1)) + self.post_word_emb.forward_by_index(pe_utt_loc).transpose(0, 1)
 
         for i, layer in enumerate(self.enc_layers):
-            if i == self.num_layers_e // 2:
+            if i == self.config.num_hidden_layers // 2:
                 # Positional Embedding for Context Encoder
                 enc_inp = enc_inp + self.post_word_emb(enc_inp.transpose(0, 1)).transpose(0, 1)
-            if i < self.num_layers_e // 2:
+            if i < self.config.num_hidden_layers // 2:
                 enc_inp = layer(enc_inp,
                                 src_key_padding_mask=src_key_padding_mask,
                                 src_mask=enc_mask_utt.float())
@@ -289,34 +316,11 @@ class HIERBERTTransformer(Module):
 
         pooled_output = hidden_states[:, 0, :]
         outputs = (hidden_states, pooled_output)
-        if not return_dict:
-            return outputs
-        return BaseModelOutputWithPoolingAndCrossAttentions(
-            last_hidden_state=hidden_states,
-            pooler_output=pooled_output)
-        # #This to deal with future problems
-        # if not self.pred_outs:
-        #     return outputs
-        # else:
-        #     token_predictions = self.token_prediction_layer(hidden_states)
 
-        #     prediction_scores, seq_relationship_score = self.softmax(token_predictions), self.classification_layer(pooled_output)
-
-        #     total_loss = None
-        #     if labels is not None and next_sentence_label is not None:
-        #         loss_fct = torch.nn.CrossEntropyLoss()
-        #         masked_lm_loss = loss_fct(prediction_scores.view(-1, self.config.vocab_size), labels.view(-1))
-        #         next_sentence_loss = loss_fct(seq_relationship_score.view(-1, 2), next_sentence_label.view(-1))
-        #         total_loss = masked_lm_loss + next_sentence_loss
-
-        #     if not return_dict:
-        #         output = (prediction_scores, seq_relationship_score) + outputs[2:]
-        #         return ((total_loss,) + output) if total_loss is not None else output
-        #     #TODO
-        #     return outputs
+        return outputs
 
     def create_padding_mask(self, token_ids):
-        padding_mask = token_ids.eq(self.pad_index)
+        padding_mask = token_ids.eq(self.config.pad_token_id)
         padding_mask = padding_mask.unsqueeze(1).unsqueeze(2)  # Add extra dimensions for broadcasting
         return padding_mask
 
@@ -339,10 +343,61 @@ class HIERBERTTransformer(Module):
         token_type_ids = torch.zeros_like(input_ids)
 
         for row, row_tensor in enumerate(input_ids):
-            sep_indices = torch.nonzero(row_tensor == self.sep_token_id)
+            sep_indices = torch.nonzero(row_tensor == self.config.sep_token_id)
             prev_index = -1
             for type_id, index in enumerate(sep_indices):
                 token_type_ids[row, prev_index + 1:index + 1] = type_id
                 prev_index = index
 
         return token_type_ids
+
+
+class HierBertModel(PreTrainedModel):
+    config_class = HierBertConfig
+    base_model_prefix = "hier"
+
+    def __init__(self, config):
+        super().__init__(config)
+
+        self.model = HierBert(config)
+
+    def forward(
+            self,
+            input_ids=None,
+            attention_mask=None,
+            token_type_ids=None,
+            position_ids=None,
+            inputs_embeds=None,
+            output_attentions=None,
+            output_hidden_states=None,
+            return_dict=None,
+            **kwargs
+    ):
+        outputs = self.model(input_ids=input_ids,
+                             attention_mask=attention_mask,
+                             token_type_ids=token_type_ids,
+                             position_ids=position_ids,
+                             inputs_embeds=inputs_embeds,
+                             output_attentions=output_attentions,
+                             output_hidden_states=output_hidden_states,
+                             return_dict=return_dict)
+        if not return_dict:
+            return outputs
+
+        return BaseModelOutputWithPooling(
+            last_hidden_state=outputs[0],
+            pooler_output=outputs[1])
+
+
+class HierBertForMaskedLM(BertForMaskedLM):
+    config_class = HierBertConfig
+    def __init__(self, config):
+        super().__init__(config)
+        self.bert = HierBertModel(config)
+
+
+class HierBertForSequenceClassification(BertForSequenceClassification):
+    config_class = HierBertConfig
+    def __init__(self, config):
+        super().__init__(config)
+        self.bert = HierBertModel(config)

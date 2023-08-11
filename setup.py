@@ -7,7 +7,10 @@ setup(
     install_requires=[
         'torch',
         'transformers',
-        # Add any other required dependencies here
+        'tokenizers',
+        'sentencepiece',
+        'seaborn',
+        'matplotlib',
     ],
     author='Igor',
     author_email='igorkuz.tech@gmail.com',
