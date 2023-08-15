@@ -34,6 +34,7 @@ def main():
     parser.add_argument("--type_vocab_size", type=int, default=2, help="Size of the token type vocabulary.")
     parser.add_argument("--initializer_range", type=float, default=0.02, help="Initializer range for model weights.")
     parser.add_argument("--layer_norm_eps", type=float, default=1e-6, help="Epsilon for layer normalization.")
+    parser.add_argument("--norm_first", type=bool, default=True, help="PreLayer normalization.")
     parser.add_argument("--pad_token_id", type=int, default=0, help="Token ID for padding.")
     parser.add_argument("--sep_token_id", type=int, default=3, help="Token ID for separating segments.")
 
@@ -56,8 +57,9 @@ def main():
         type_vocab_size=args.type_vocab_size,
         initializer_range=args.initializer_range,
         layer_norm_eps=args.layer_norm_eps,
+        norm_first=args.norm_first,
         pad_token_id=args.pad_token_id,
-        sep_token_id=args.sep_token_id, )
+        sep_token_id=args.sep_token_id)
 
     # Setup blank model
     model = HierBertModel(config)

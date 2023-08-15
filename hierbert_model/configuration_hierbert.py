@@ -79,6 +79,7 @@ class HierBertConfig(PretrainedConfig):
             type_vocab_size=2,
             initializer_range=0.02,
             layer_norm_eps=1e-6,
+            norm_first=True,
             pad_token_id=0,
             sep_token_id=3,
             position_embedding_type="absolute",
@@ -109,6 +110,7 @@ class HierBertConfig(PretrainedConfig):
         self.type_vocab_size = type_vocab_size
         self.initializer_range = initializer_range
         self.layer_norm_eps = layer_norm_eps
+        self.norm_first = norm_first
         self.position_embedding_type = position_embedding_type
         self.use_cache = use_cache
         self.classifier_dropout = classifier_dropout

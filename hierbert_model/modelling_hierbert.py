@@ -117,72 +117,6 @@ class PositionalEmbedding(torch.nn.Module):
         return self.pe.expand(loc.shape[0], -1, -1).gather(1, loc.unsqueeze(2).expand(-1, -1, self.pe.shape[2]).long())
 
 
-# class TransformerEncoderLayer(Module):
-#     r"""TransformerEncoderLayer is made up of self-attn and feedforward network.
-#     This standard encoder layer is based on the paper "Attention Is All You Need".
-#     Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez,
-#     Lukasz Kaiser, and Illia Polosukhin. 2017. Attention is all you need. In Advances in
-#     Neural Information Processing Systems, pages 6000-6010. Users may modify or implement
-#     in a different way during application.
-#     Args:
-#         d_model: the number of expected features in the input (required).
-#         nhead: the number of heads in the multiheadattention models (required).
-#         dim_feedforward: the dimension of the feedforward network model (default=2048).
-#         dropout: the dropout value (default=0.1).
-#         activation: the activation function of intermediate layer, relu or gelu (default=relu).
-#         layer_norm_eps: the eps value in layer normalization components (default=1e-5).
-#     Examples::
-#         >>> encoder_layer = nn.TransformerEncoderLayer(d_model=512, nhead=8)
-#         >>> src = torch.rand(10, 32, 512)
-#         >>> out = encoder_layer(src)
-#     """
-#
-#     def __init__(self, config):
-#         super(TransformerEncoderLayer, self).__init__()
-#
-#         self.self_attn = MultiheadAttention(config.hidden_size,
-#                                             config.num_attention_heads,
-#                                             dropout=config.attention_probs_dropout_prob)
-#         # Implementation of Feedforward model
-#         self.linear1 = Linear(config.hidden_size, config.intermediate_size)
-#         self.dropout = Dropout(config.hidden_dropout_prob)
-#         self.linear2 = Linear(config.intermediate_size, config.hidden_size)
-#
-#         self.norm1 = LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
-#         self.norm2 = LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
-#         self.dropout1 = Dropout(config.hidden_dropout_prob)
-#         self.dropout2 = Dropout(config.hidden_dropout_prob)
-#
-#         self.activation = _get_activation_fn(config.hidden_act)
-#
-#     def __setstate__(self, state):
-#         if 'activation' not in state:
-#             state['activation'] = F.relu
-#         super(TransformerEncoderLayer, self).__setstate__(state)
-#
-#     def forward(self, src: Tensor, src_mask: Optional[Tensor] = None,
-#                 src_key_padding_mask: Optional[Tensor] = None) -> Tensor:
-#         r"""Pass the input through the encoder layer.
-#         Args:
-#             src: the sequence to the encoder layer (required).
-#             src_mask: the mask for the src sequence (optional).
-#             src_key_padding_mask: the mask for the src keys per batch (optional).
-#         Shape:
-#             see the docs in Transformer class.
-#         """
-#         # PreLayerNorm
-#         src_mask = src_mask.repeat(self.self_attn.num_heads, 1, 1)
-#         src = self.norm1(src)
-#         src2 = self.self_attn(src, src, src, attn_mask=src_mask,
-#                               key_padding_mask=src_key_padding_mask)[0]
-#         src = src + self.dropout1(src2)
-#         src = self.norm2(src)
-#         src2 = self.linear2(self.dropout(self.activation(self.linear1(src))))
-#         src = src + self.dropout2(src2)
-#
-#         return src
-
-
 class HierBert(Module):
     r"""A transformer model. User is able to modify the attributes as needed. The architecture
     is based on the paper "Attention Is All You Need". Ashish Vaswani, Noam Shazeer,
@@ -221,14 +155,14 @@ class HierBert(Module):
         self.post_word_emb = PositionalEmbedding(config)
 
         # Encoder
-        self.enc_layers = _get_clones(TransformerEncoderLayer(d_model = config.hidden_size,
-                                                              nhead = config.num_attention_heads,
-                                                              dim_feedforward= config.intermediate_size,
+        self.enc_layers = _get_clones(TransformerEncoderLayer(d_model=config.hidden_size,
+                                                              nhead=config.num_attention_heads,
+                                                              dim_feedforward=config.intermediate_size,
                                                               dropout=config.hidden_dropout_prob,
                                                               activation=config.hidden_act,
                                                               layer_norm_eps=config.layer_norm_eps,
-                                                              batch_first=False,
-                                                              norm_first=True,),
+                                                              norm_first=config.norm_first,
+                                                              batch_first=False),
                                       config.num_hidden_layers)  # ModuleList
         self.norm_e = LayerNorm(config.hidden_size,
                                 eps=config.layer_norm_eps)
@@ -332,7 +266,7 @@ class HierBert(Module):
                 # print("SWE")
                 enc_inp = layer(enc_inp,
                                 src_key_padding_mask=src_key_padding_mask,
-                                src_mask=enc_mask_utt.repeat(self.config.num_attention_heads,1,1).float())
+                                src_mask=enc_mask_utt.repeat(self.config.num_attention_heads, 1, 1).float())
             else:
                 # Positional Embedding for Context Encoder if few connected CSE  use it before
                 enc_inp = enc_inp + self.post_word_emb(enc_inp.transpose(0, 1)).transpose(0, 1)
@@ -340,7 +274,7 @@ class HierBert(Module):
                 # print("CSE")
                 enc_inp = layer(enc_inp,
                                 src_key_padding_mask=src_key_padding_mask,
-                                src_mask=enc_mask_ct.repeat(self.config.num_attention_heads,1,1))
+                                src_mask=enc_mask_ct.repeat(self.config.num_attention_heads, 1, 1))
 
         if self.norm_e is not None:
             enc_inp = self.norm_e(enc_inp)
