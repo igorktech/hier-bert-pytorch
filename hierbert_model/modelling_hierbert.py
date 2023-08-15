@@ -217,8 +217,7 @@ class HierBert(Module):
             # >>> output = transformer_model(src, src_mask=src_mask)
         """
 
-        src = input_ids
-        print(src.shape)
+        # print(input_ids.shape)
 
         if attention_mask is None:
             # Convert input_ids to attention mask
@@ -232,17 +231,17 @@ class HierBert(Module):
         src_key_padding_mask = torch.logical_not(attention_mask)
         utt_indices = token_type_ids
 
-        pe_utt_loc, enc_mask_utt, enc_mask_ct = get_hier_encoder_mask(src,
+        pe_utt_loc, enc_mask_utt, enc_mask_ct = get_hier_encoder_mask(input_ids,
                                                                       src_key_padding_mask,
                                                                       utt_indices,
                                                                       type=ct_mask_type)
 
-        # memory = self.encoder(src, mask=src_mask, src_key_padding_mask=src_key_padding_mask)
+        # memory = self.encoder(input_ids, mask=src_mask, src_key_padding_mask=src_key_padding_mask)
 
         # Encoding
-        # memory = src
+        # memory = input_ids
 
-        enc_inp = self.word_emb(src.transpose(0, 1)) + self.post_word_emb.forward_by_index(pe_utt_loc).transpose(0, 1)
+        enc_inp = self.word_emb(input_ids.transpose(0, 1)) + self.post_word_emb.forward_by_index(pe_utt_loc).transpose(0, 1)
 
         # Basic config
         # for i, layer in enumerate(self.enc_layers):
