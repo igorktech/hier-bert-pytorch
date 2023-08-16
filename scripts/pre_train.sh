@@ -4,7 +4,6 @@ PROJECT_DIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")/../")
 
 export PYTHONPATH=$PYTHONPATH:$PROJECT_DIR
 export TOKENIZERS_PARALLELISM=false
-#export OMP_PREFIX=$(brew --prefix libomp)
 
 LAYOUT='i3'
 MODEL_WARMUP_STRATEGY='grouped'
@@ -15,17 +14,17 @@ OUTPUT_MODEL_DIR=$PROJECT_DIR/data/hier-bert-$LAYOUT-mlm
 TRAIN_FILE_PATH=$PROJECT_DIR/data/datasets/train/train_test.txt
 
 # Generate model
-python3 $PROJECT_DIR/pre_training/generate_model.py \
-  --output_dir $MODEL_DIR \
-  --tokenizer_name_or_path $TOKENIZER_DIR
+python3 "$PROJECT_DIR/pre_training/generate_model.py" \
+  --output_dir "$MODEL_DIR" \
+  --tokenizer_name_or_path "$TOKENIZER_DIR"
 
 # Run pre_training
-python3 $PROJECT_DIR/pre_training/run_mlm.py \
-  --model_name_or_path $MODEL_DIR \
-  --train_file $TRAIN_FILE_PATH \
+python3 "$PROJECT_DIR/pre_training/run_mlm.py" \
+  --model_name_or_path "$MODEL_DIR" \
+  --train_file "$TRAIN_FILE_PATH" \
   --do_train \
   --do_eval \
-  --output_dir $OUTPUT_MODEL_DIR \
+  --output_dir "$OUTPUT_MODEL_DIR" \
   --overwrite_output_dir \
   --logging_steps 500 \
   --evaluation_strategy steps \

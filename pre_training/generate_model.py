@@ -62,6 +62,7 @@ def main():
         sep_token_id=args.sep_token_id)
 
     # Setup blank model
+    HierBertModel.register_for_auto_class("AutoModel")
     model = HierBertModel(config)
 
     # Save tokenizer and model

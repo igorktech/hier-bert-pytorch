@@ -12,7 +12,7 @@ from hierbert_model.configuration_hierbert import HierBertConfig
 tokenizer_name = 'albert-base-v2'
 tokenizer = AlbertTokenizer.from_pretrained(tokenizer_name)
 
-model_name = '../data/model'#"name_or_path"
+model_name = "name_or_path"
 
 model = HierBertModel(HierBertConfig())
 # Optional to binding code for config.json before publishing
@@ -27,7 +27,7 @@ model = HierBertModel(HierBertConfig())
 # model.push_to_hub(model_name)
 
 # Example input
-text = "Hello, how are you? [SEP] I am fine thank you. [SEP] How was your weekend? [SEP]"
+text = "Hello, how are you? [SEP] [CLS] I am fine thank you. [SEP] [CLS] How was your weekend?"
 
 # Tokenize the input
 tokens = tokenizer.tokenize(text)

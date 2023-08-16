@@ -12,7 +12,6 @@ from torch.nn.init import xavier_uniform_
 from torch.nn.modules.dropout import Dropout
 from torch.nn.modules.linear import Linear
 from torch.nn.modules.normalization import LayerNorm
-# from torch.nn import TransformerEncoderLayer
 
 from transformers.modeling_outputs import BaseModelOutputWithPooling
 from transformers import PreTrainedModel
@@ -116,6 +115,7 @@ class PositionalEmbedding(torch.nn.Module):
     def forward_by_index(self, loc):
         return self.pe.expand(loc.shape[0], -1, -1).gather(1, loc.unsqueeze(2).expand(-1, -1, self.pe.shape[2]).long())
 
+
 class TransformerEncoderLayer(Module):
     r"""TransformerEncoderLayer is made up of self-attn and feedforward network.
     This standard encoder layer is based on the paper "Attention Is All You Need".
@@ -179,7 +179,7 @@ class TransformerEncoderLayer(Module):
 
             src = self.norm1(src)
             src_attn = self.self_attn(src, src, src, attn_mask=src_mask,
-                                  key_padding_mask=src_key_padding_mask,average_attn_weights=False)#[0]
+                                      key_padding_mask=src_key_padding_mask, average_attn_weights=False)  # [0]
             src = src + self.dropout1(src_attn[0])
             src = self.norm2(src)
             src_ffn = self.linear2(self.dropout(self.activation(self.linear1(src))))
@@ -187,13 +187,14 @@ class TransformerEncoderLayer(Module):
 
         else:
             src_attn = self.self_attn(src, src, src, attn_mask=src_mask,
-                                  key_padding_mask=src_key_padding_mask,average_attn_weights=False)#[0]
+                                      key_padding_mask=src_key_padding_mask, average_attn_weights=False)  # [0]
             src = src + self.dropout1(src_attn[0])
             src = self.norm1(src)
             src_ffn = self.linear2(self.dropout(self.activation(self.linear1(src))))
             src = src + self.dropout2(src_ffn)
             src = self.norm2(src)
         return src, src_attn[1]
+
 
 class HierBert(Module):
     r"""A transformer model. User is able to modify the attributes as needed. The architecture
@@ -226,23 +227,15 @@ class HierBert(Module):
         self.config = config
         # Word Emb
         self.word_embeddings = torch.nn.Embedding(config.vocab_size,
-                                           config.hidden_size,
-                                           padding_idx=config.pad_token_id)
+                                                  config.hidden_size,
+                                                  padding_idx=config.pad_token_id)
 
         # Pos Emb
         self.post_word_emb = PositionalEmbedding(config)
 
         # Encoder
         self.enc_layers = _get_clones(TransformerEncoderLayer(config=config),
-        # d_model=config.hidden_size,
-        #                                                       nhead=config.num_attention_heads,
-        #                                                       dim_feedforward=config.intermediate_size,
-        #                                                       dropout=config.hidden_dropout_prob,
-        #                                                       activation=config.hidden_act,
-        #                                                       layer_norm_eps=config.layer_norm_eps,
-        #                                                       norm_first=config.norm_first,
-        #                                                       batch_first=False),
-                                      config.num_hidden_layers)  # ModuleList
+                                      config.num_hidden_layers)
         self.norm_e = LayerNorm(config.hidden_size,
                                 eps=config.layer_norm_eps)
 
@@ -322,7 +315,8 @@ class HierBert(Module):
         # Encoding
         # memory = input_ids
 
-        enc_inp = self.word_embeddings(input_ids.transpose(0, 1)) + self.post_word_emb.forward_by_index(pe_utt_loc).transpose(0, 1)
+        enc_inp = self.word_embeddings(input_ids.transpose(0, 1)) + self.post_word_emb.forward_by_index(
+            pe_utt_loc).transpose(0, 1)
 
         # Basic config
         # for i, layer in enumerate(self.enc_layers):
@@ -345,16 +339,16 @@ class HierBert(Module):
                 # Shared encoders or Segment-wise encoders
                 # print("SWE")
                 enc_inp, att_w = layer(enc_inp,
-                                src_key_padding_mask=src_key_padding_mask,
-                                src_mask=enc_mask_utt.repeat(self.config.num_attention_heads, 1, 1).float())
+                                       src_key_padding_mask=src_key_padding_mask,
+                                       src_mask=enc_mask_utt.repeat(self.config.num_attention_heads, 1, 1).float())
             else:
                 # Positional Embedding for Context Encoder if few connected CSE  use it before
                 enc_inp = enc_inp + self.post_word_emb(enc_inp.transpose(0, 1)).transpose(0, 1)
                 # Context encoder or Cross-segment encoders
                 # print("CSE")
                 enc_inp, att_w = layer(enc_inp,
-                                src_key_padding_mask=src_key_padding_mask,
-                                src_mask=enc_mask_ct.repeat(self.config.num_attention_heads, 1, 1))
+                                       src_key_padding_mask=src_key_padding_mask,
+                                       src_mask=enc_mask_ct.repeat(self.config.num_attention_heads, 1, 1))
             if output_attentions:
                 all_self_attentions = all_self_attentions + (att_w,)
 
@@ -365,7 +359,7 @@ class HierBert(Module):
         hidden_states = encoder_output
 
         pooled_output = hidden_states[:, 0, :]
-        outputs = (hidden_states, pooled_output,all_self_attentions)
+        outputs = (hidden_states, pooled_output, all_self_attentions)
 
         return outputs
 
