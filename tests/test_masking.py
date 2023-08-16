@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 
 from hierbert_model.modelling_hierbert import get_hier_encoder_mask
 
-utt_indices = torch.tensor([[0, 0, 0, 1, 1, 1, 1, 2, 2, 2, ]])
+utt_indices = torch.tensor([[0, 0, 0, 1, 1, 1, 2, 3,3, 3]])
 src_input_ids = torch.randint(0, 1, (1, 10))
-src_padding_mask = torch.tensor([[0, 0, 0, 0, 0, 0, 0, 1, 1, 1, ]])
+src_padding_mask = torch.tensor([[0, 0, 0, 0, 0, 0, 0, 1, 1, 1]])
 
 pe_utt_loc, enc_mask_utt, enc_mask_ct = get_hier_encoder_mask(
     src_input_ids,

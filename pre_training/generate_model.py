@@ -1,4 +1,4 @@
-from hierbert_model.modelling_hierbert import HierBertModel
+from hierbert_model.modelling_hierbert import HierBertModel, HierBertForMaskedLM
 from hierbert_model.configuration_hierbert import HierBertConfig
 from transformers import AutoTokenizer
 import argparse

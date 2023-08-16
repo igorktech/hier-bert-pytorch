@@ -12,19 +12,19 @@ from hierbert_model.configuration_hierbert import HierBertConfig
 tokenizer_name = 'albert-base-v2'
 tokenizer = AlbertTokenizer.from_pretrained(tokenizer_name)
 
-model_name = "name_or_path"
+model_name = '../data/model'#"name_or_path"
 
 model = HierBertModel(HierBertConfig())
 # Optional to binding code for config.json before publishing
-HierBertConfig.register_for_auto_class()
-HierBertModel.register_for_auto_class("AutoModel")
-HierBertForSequenceClassification.register_for_auto_class("AutoModelForSequenceClassification")
-HierBertForMaskedLM.register_for_auto_class("AutoModelForMaskedLM")
+# HierBertConfig.register_for_auto_class()
+# HierBertModel.register_for_auto_class("AutoModel")
+# HierBertForSequenceClassification.register_for_auto_class("AutoModelForSequenceClassification")
+# HierBertForMaskedLM.register_for_auto_class("AutoModelForMaskedLM")
 
 # pretrained_model = HierBert(HierBertConfig())
 # model.model.load_state_dict(pretrained_model.state_dict())
 
-model.push_to_hub(model_name)
+# model.push_to_hub(model_name)
 
 # Example input
 text = "Hello, how are you? [SEP] I am fine thank you. [SEP] How was your weekend? [SEP]"
@@ -57,6 +57,12 @@ print("Pooled Output Shape:", pooled_output.shape)
 print(outputs[0])
 
 model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2, trust_remote_code=True)
+outputs = model(input_ids=input_ids, attention_mask=attention_mask, token_type_ids=inputs['token_type_ids'],
+                return_dict=False)
+print(outputs)
+
+
+model = AutoModelForMaskedLM.from_pretrained(model_name, trust_remote_code=True)
 outputs = model(input_ids=input_ids, attention_mask=attention_mask, token_type_ids=inputs['token_type_ids'],
                 return_dict=False)
 print(outputs)
