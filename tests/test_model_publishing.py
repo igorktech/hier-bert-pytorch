@@ -1,4 +1,4 @@
-from hierbert_model.modelling_hierbert import HierBertModel, HierBert, HierBertForMaskedLM, \
+from hier_model.modelling_hier import HierBertModel, HierBert, HierBertForMaskedLM, \
     HierBertForSequenceClassification
 
 from transformers import AutoModel, AutoConfig, \
@@ -6,7 +6,7 @@ from transformers import AutoModel, AutoConfig, \
     AutoModelForSequenceClassification
 from transformers import AlbertTokenizer
 
-from hierbert_model.configuration_hierbert import HierBertConfig
+from hier_model.configuration_hier import HierBertConfig
 
 # We will use pretrained AlBert tokenizer just for testing
 tokenizer_name = 'albert-base-v2'

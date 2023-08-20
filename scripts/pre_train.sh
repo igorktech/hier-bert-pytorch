@@ -5,18 +5,20 @@ PROJECT_DIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")/../")
 export PYTHONPATH=$PYTHONPATH:$PROJECT_DIR
 export TOKENIZERS_PARALLELISM=false
 
+MODEL_TYPE='hibial'
 LAYOUT='i3'
 MODEL_WARMUP_STRATEGY='grouped'
 MODEL_MAX_LENGTH=512
-MODEL_DIR=$PROJECT_DIR/data/model
+MODEL_DIR=$PROJECT_DIR/data/$MODEL_TYPE-model
 TOKENIZER_DIR=$PROJECT_DIR/data/tokenizer-sp
-OUTPUT_MODEL_DIR=$PROJECT_DIR/data/hier-bert-$LAYOUT-mlm
+OUTPUT_MODEL_DIR=$PROJECT_DIR/data/$MODEL_TYPE-bert-$LAYOUT-mlm
 TRAIN_FILE_PATH=$PROJECT_DIR/data/datasets/train/train_test.txt
 
 # Generate model
 python3 "$PROJECT_DIR/pre_training/generate_model.py" \
   --output_dir "$MODEL_DIR" \
-  --tokenizer_name_or_path "$TOKENIZER_DIR"
+  --tokenizer_name_or_path "$TOKENIZER_DIR" \
+  --model_type_prefix "$MODEL_TYPE"
 
 # Run pre_training
 python3 "$PROJECT_DIR/pre_training/run_mlm.py" \
@@ -32,8 +34,8 @@ python3 "$PROJECT_DIR/pre_training/run_mlm.py" \
   --save_strategy steps \
   --save_steps 5000 \
   --save_total_limit 2 \
-  --max_steps 5 \
-  --learning_rate 1e-3 \
+  --max_steps 25 \
+  --learning_rate 1e-2 \
   --trust_remote_code \
   --per_device_train_batch_size 4 \
   --per_device_eval_batch_size 4 \

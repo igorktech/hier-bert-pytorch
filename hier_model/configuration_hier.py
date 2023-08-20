@@ -86,10 +86,10 @@ class HierBertConfig(PretrainedConfig):
             use_cache=True,
             classifier_dropout=None,
             auto_map={
-                "AutoConfig": "configuration_hierbert.HierBertConfig",
-                "AutoModel": "modelling_hierbert.HierBertModel",
-                "AutoModelForMaskedLM": "modelling_hierbert.HierBertForMaskedLM",
-                "AutoModelForSequenceClassification": "modelling_hierbert.HierBertForSequenceClassification",
+                "AutoConfig": "configuration_hier.HierBertConfig",
+                "AutoModel": "modelling_hier.HierBertModel",
+                "AutoModelForMaskedLM": "modelling_hier.HierBertForMaskedLM",
+                "AutoModelForSequenceClassification": "modelling_hier.HierBertForSequenceClassification",
             },
             **kwargs,
     ):

@@ -1,6 +1,6 @@
 from transformers import AlbertTokenizer
-from hierbert_model.modelling_hierbert import HierBertModel
-from hierbert_model.configuration_hierbert import HierBertConfig
+from hier_model.modelling_hier import HierBertModel
+from hier_model.configuration_hier import HierBertConfig
 
 # Load the pretrained model and tokenizer
 model_name = 'albert-base-v2'

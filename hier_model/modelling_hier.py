@@ -17,7 +17,7 @@ from transformers.modeling_outputs import BaseModelOutputWithPooling
 from transformers import PreTrainedModel
 from transformers import BertForMaskedLM, BertForSequenceClassification
 
-from .configuration_hierbert import HierBertConfig
+from .configuration_hier import HierBertConfig
 
 import warnings
 
@@ -340,7 +340,7 @@ class HierBert(Module):
                 # print("SWE")
                 enc_inp, att_w = layer(enc_inp,
                                        src_key_padding_mask=src_key_padding_mask,
-                                       src_mask=enc_mask_utt.repeat(self.config.num_attention_heads, 1, 1).float())
+                                       src_mask=enc_mask_utt.repeat(self.config.num_attention_heads, 1, 1))
             else:
                 # Positional Embedding for Context Encoder if few connected CSE  use it before
                 enc_inp = enc_inp + self.post_word_emb(enc_inp.transpose(0, 1)).transpose(0, 1)

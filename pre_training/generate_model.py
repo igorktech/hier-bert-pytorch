@@ -1,5 +1,7 @@
-from hierbert_model.modelling_hierbert import HierBertModel, HierBertForMaskedLM
-from hierbert_model.configuration_hierbert import HierBertConfig
+from hier_model.modelling_hier import HierBertModel, HierBertForMaskedLM
+from hier_model.configuration_hier import HierBertConfig
+from hibial_model.modelling_hibial import HiBiAlBertModel, HiBiAlBertForMaskedLM
+from hibial_model.configuration_hibial import HiBiAlBertConfig
 from transformers import AutoTokenizer
 import argparse
 
@@ -17,6 +19,7 @@ def main():
     #                     ah - ad-hoc,
     #                     ec - early-contextualization
     #                     lc - late-contextualization")
+    parser.add_argument("--model_type_prefix", type=str, default="hier", help="Model type: hier/hibial.")
     parser.add_argument("--vocab_size", type=int, default=32000, help="Size of the vocabulary.")
     parser.add_argument("--hidden_size", type=int, default=512, help="Dimensionality of the hidden layers.")
     parser.add_argument("--num_hidden_layers", type=int, default=6, help="Number of hidden layers.")
@@ -43,27 +46,51 @@ def main():
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name_or_path)
 
-    # Setup model config
-    config = HierBertConfig(
-        vocab_size=args.vocab_size,
-        hidden_size=args.hidden_size,
-        num_hidden_layers=args.num_hidden_layers,
-        num_attention_heads=args.num_attention_heads,
-        hidden_act=args.hidden_act,
-        intermediate_size=args.intermediate_size,
-        hidden_dropout_prob=args.hidden_dropout_prob,
-        attention_probs_dropout_prob=args.attention_probs_dropout_prob,
-        max_position_embeddings=args.max_position_embeddings,
-        type_vocab_size=args.type_vocab_size,
-        initializer_range=args.initializer_range,
-        layer_norm_eps=args.layer_norm_eps,
-        norm_first=args.norm_first,
-        pad_token_id=args.pad_token_id,
-        sep_token_id=args.sep_token_id)
+    if args.model_type_prefix == 'hier':
+        # Setup model config
+        config = HierBertConfig(
+            vocab_size=args.vocab_size,
+            hidden_size=args.hidden_size,
+            num_hidden_layers=args.num_hidden_layers,
+            num_attention_heads=args.num_attention_heads,
+            hidden_act=args.hidden_act,
+            intermediate_size=args.intermediate_size,
+            hidden_dropout_prob=args.hidden_dropout_prob,
+            attention_probs_dropout_prob=args.attention_probs_dropout_prob,
+            max_position_embeddings=args.max_position_embeddings,
+            type_vocab_size=args.type_vocab_size,
+            initializer_range=args.initializer_range,
+            layer_norm_eps=args.layer_norm_eps,
+            norm_first=args.norm_first,
+            pad_token_id=args.pad_token_id,
+            sep_token_id=args.sep_token_id)
 
-    # Setup blank model
-    HierBertModel.register_for_auto_class("AutoModel")
-    model = HierBertModel(config)
+        # Setup blank model
+        HierBertModel.register_for_auto_class("AutoModel")
+        model = HierBertModel(config)
+
+    if args.model_type_prefix == 'hibial':
+        # Setup model config
+        config = HiBiAlBertConfig(
+            vocab_size=args.vocab_size,
+            hidden_size=args.hidden_size,
+            num_hidden_layers=args.num_hidden_layers,
+            num_attention_heads=args.num_attention_heads,
+            hidden_act=args.hidden_act,
+            intermediate_size=args.intermediate_size,
+            hidden_dropout_prob=args.hidden_dropout_prob,
+            attention_probs_dropout_prob=args.attention_probs_dropout_prob,
+            max_position_embeddings=args.max_position_embeddings,
+            type_vocab_size=args.type_vocab_size,
+            initializer_range=args.initializer_range,
+            layer_norm_eps=args.layer_norm_eps,
+            norm_first=args.norm_first,
+            pad_token_id=args.pad_token_id,
+            sep_token_id=args.sep_token_id)
+
+        # Setup blank model
+        HiBiAlBertModel.register_for_auto_class("AutoModel")
+        model = HiBiAlBertModel(config)
 
     # Save tokenizer and model
     tokenizer.save_pretrained(args.output_dir)

@@ -1,12 +1,14 @@
 from bertviz import head_view, model_view
 from transformers import AlbertTokenizer
-from hierbert_model.modelling_hierbert import HierBertModel
-from hierbert_model.configuration_hierbert import HierBertConfig
+# from hier_model.modelling_hierbert import HierBertModel
+# from hier_model.configuration_hierbert import HierBertConfig
+from hibial_model.modelling_hibial import HiBiAlBertModel
+from hibial_model.configuration_hibial import HiBiAlBertConfig
 
 # Load the pretrained model and tokenizer
 model_name = 'albert-base-v2'
 tokenizer = AlbertTokenizer.from_pretrained(model_name)
-model = HierBertModel(HierBertConfig()) #HierBertModel.from_pretrained('../data/hier-bert-i3-mlm', trust_remote_code=True)  # (HierBertConfig())
+model = HiBiAlBertModel(HiBiAlBertConfig()) #HierBertModel.from_pretrained('../data/hier-bert-i3-mlm', trust_remote_code=True)  # (HierBertConfig())
 
 sentence_a = "The cat sat on the mat"
 sentence_b = "The cat lay on the rug"
