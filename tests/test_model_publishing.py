@@ -61,7 +61,6 @@ outputs = model(input_ids=input_ids, attention_mask=attention_mask, token_type_i
                 return_dict=False)
 print(outputs)
 
-
 model = AutoModelForMaskedLM.from_pretrained(model_name, trust_remote_code=True)
 outputs = model(input_ids=input_ids, attention_mask=attention_mask, token_type_ids=inputs['token_type_ids'],
                 return_dict=False)

@@ -25,12 +25,12 @@ inputs = tokenizer.encode_plus(sentence_a, sentence_b, return_tensors='pt')
 # Get the input tensors
 input_ids = inputs['input_ids']
 attention_mask = inputs['attention_mask']
-token_type_ids=inputs['token_type_ids']
+token_type_ids = inputs['token_type_ids']
 print('input ids', input_ids)
 print('attention mask', attention_mask)
 print('token type ids', token_type_ids)
 # Forward pass through the model
-outputs = model(input_ids=input_ids, #attention_mask=attention_mask,# token_type_ids=token_type_ids,
+outputs = model(input_ids=input_ids,  # attention_mask=attention_mask,# token_type_ids=token_type_ids,
                 return_dict=False)
 
 # Get the output tensors

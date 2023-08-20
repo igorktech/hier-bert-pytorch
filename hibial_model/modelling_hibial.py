@@ -327,8 +327,8 @@ class HiBiAlBert(Module):
         enc_mask_ct = enc_mask_ct.repeat(self.config.num_attention_heads, 1, 1)
 
         B, T = input_ids.shape  # batch size, sequence length
-        bialibi_utt_mask = self.bialibi_utt(T).repeat(B,1,1)
-        bialibi_ct_mask = self.bialibi_ct(T).repeat(B,1,1)
+        bialibi_utt_mask = self.bialibi_utt(T).repeat(B, 1, 1)
+        bialibi_ct_mask = self.bialibi_ct(T).repeat(B, 1, 1)
 
         bialibi_utt_mask[enc_mask_utt.bool()] = float('-inf')
         bialibi_ct_mask[enc_mask_ct.bool()] = float('-inf')

@@ -16,6 +16,7 @@ from dataclasses import dataclass
 class Conf:
     num_attention_heads = 1
 
+
 config = Conf()
 bialibi_utt = BiALiBi(config)
 bialibi_ct = BiALiBi(config)

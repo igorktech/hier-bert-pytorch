@@ -8,7 +8,8 @@ from hibial_model.configuration_hibial import HiBiAlBertConfig
 # Load the pretrained model and tokenizer
 model_name = 'albert-base-v2'
 tokenizer = AlbertTokenizer.from_pretrained(model_name)
-model = HiBiAlBertModel(HiBiAlBertConfig()) #HierBertModel.from_pretrained('../data/hier-bert-i3-mlm', trust_remote_code=True)  # (HierBertConfig())
+model = HiBiAlBertModel(HiBiAlBertConfig())
+# HierBertModel.from_pretrained('../data/hier-bert-i3-mlm', trust_remote_code=True)  # (HierBertConfig())
 
 sentence_a = "The cat sat on the mat"
 sentence_b = "The cat lay on the rug"
