@@ -40,14 +40,14 @@ sns.set_theme(style='white')
 sns.set(rc={'axes.facecolor': '#ece2f0'})
 
 fig, axes = plt.subplots(2, 2, figsize=(10, 8))
-fig.suptitle('Various HIER-CLS Masks')
+fig.suptitle('Various HIER-AliBi-CLS Masks')
 
 sns.heatmap((src_padding_mask.float()[0]).unsqueeze(0).expand(src_input_ids.float().shape[1], -1).cpu().numpy(),
             ax=axes[0, 0],
             cmap=sns.color_palette("RdPu", 10)).set_title("SRC Padding Mask")
-sns.heatmap((pe_utt_loc.float()[0]).unsqueeze(0).expand(src_input_ids.float().shape[1], -1).cpu().numpy(),
-            ax=axes[0, 1],
-            cmap=sns.color_palette("RdPu", 10)).set_title("PE Utterance")
+# sns.heatmap((pe_utt_loc.float()[0]).unsqueeze(0).expand(src_input_ids.float().shape[1], -1).cpu().numpy(),
+#             ax=axes[0, 1],
+#             cmap=sns.color_palette("RdPu", 10)).set_title("PE Utterance")
 
 np_bialibi_utt_mask = (bialibi_utt_mask[0] * 1).detach().numpy()
 np_bialibi_ct_mask = (bialibi_ct_mask[0] * 1).detach().numpy()
