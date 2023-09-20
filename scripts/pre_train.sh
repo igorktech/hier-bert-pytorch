@@ -28,7 +28,7 @@ python3 "$PROJECT_DIR/pre_training/run_mlm.py" \
   --do_eval \
   --output_dir "$OUTPUT_MODEL_DIR" \
   --push_to_hub \
-  --hub_model_id "igorktech\$MODEL_TYPE-bert-$LAYOUT-mlm" \
+  --hub_model_id "igorktech/""$MODEL_TYPE""-bert-$LAYOUT-mlm" \
   --overwrite_output_dir \
   --logging_steps 500 \
   --evaluation_strategy steps \
