@@ -44,7 +44,7 @@ python3 "$PROJECT_DIR/pre_training/run_mlm.py" \
   --gradient_accumulation_steps 4 \
   --eval_accumulation_steps 4 \
   --lr_scheduler_type linear \
-  --warmup_ratio 0.10 \
+  --warmup_ratio 0.50 \
   --weight_decay 0.01 \
   --mlm_probability 0.15 \
   --max_seq_length $MODEL_MAX_LENGTH \
