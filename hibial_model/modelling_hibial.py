@@ -89,7 +89,7 @@ def _get_activation_fn(activation):
     raise RuntimeError("activation should be relu/gelu, not {}".format(activation))
 
 
-class BiALiBi(torch.nn.Module):
+class BiALiBi(Module):
     def __init__(self, config):
         super().__init__()
         self.num_attention_heads = config.num_attention_heads
@@ -101,8 +101,8 @@ class BiALiBi(torch.nn.Module):
         torch.nn.init.normal_(self.gamma, -2, 1)
 
     def get_rel_pos(self, seq_len: int):
-        memory = torch.arange(seq_len, dtype=torch.float32)
-        context = torch.arange(seq_len, dtype=torch.float32).unsqueeze(-1)
+        memory = torch.arange(seq_len, dtype=torch.float32).to(self.gamma.device)
+        context = torch.arange(seq_len, dtype=torch.float32).unsqueeze(-1).to(self.gamma.device) 
         rel_pos = (memory - context).abs()
 
         return rel_pos.unsqueeze(0).expand(self.num_attention_heads, -1, -1).clone()
