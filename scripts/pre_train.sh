@@ -12,7 +12,7 @@ MODEL_MAX_LENGTH=512
 MODEL_DIR=$PROJECT_DIR/data/$MODEL_TYPE-model
 TOKENIZER_DIR=$PROJECT_DIR/data/tokenizer-sp
 OUTPUT_MODEL_DIR=$PROJECT_DIR/data/$MODEL_TYPE-bert-$LAYOUT-mlm
-TRAIN_FILE_PATH=$PROJECT_DIR/data/datasets/train/train_test.txt
+TRAIN_FILE_PATH=$PROJECT_DIR/data/datasets/train/train.txt
 
 # Generate model
 python3 "$PROJECT_DIR/pre_training/generate_model.py" \
@@ -30,17 +30,17 @@ python3 "$PROJECT_DIR/pre_training/run_mlm.py" \
   --push_to_hub \
   --hub_model_id "igorktech/""$MODEL_TYPE""-bert-$LAYOUT-mlm" \
   --overwrite_output_dir \
-  --logging_steps 500 \
+  --logging_steps 100 \
   --evaluation_strategy steps \
-  --eval_steps 10000 \
+  --eval_steps 5000 \
   --save_strategy steps \
-  --save_steps 25000 \
+  --save_steps 5000 \
   --save_total_limit 2 \
-  --max_steps 100000 \
-  --learning_rate 1e-4 \
+  --max_steps 20000 \
+  --learning_rate 1e-3 \
   --trust_remote_code \
-  --per_device_train_batch_size 64 \
-  --per_device_eval_batch_size 16 \
+  --per_device_train_batch_size 16 \
+  --per_device_eval_batch_size 4 \
   --gradient_accumulation_steps 4 \
   --eval_accumulation_steps 4 \
   --lr_scheduler_type linear \
@@ -53,3 +53,4 @@ python3 "$PROJECT_DIR/pre_training/run_mlm.py" \
   --report_to "wandb" \
   --run_name $MODEL_TYPE-bert-$LAYOUT-mlm
 #  --torch_compile
+
