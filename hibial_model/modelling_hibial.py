@@ -102,7 +102,7 @@ class BiALiBi(Module):
 
     def get_rel_pos(self, seq_len: int):
         memory = torch.arange(seq_len, dtype=torch.float32).to(self.gamma.device)
-        context = torch.arange(seq_len, dtype=torch.float32).unsqueeze(-1).to(self.gamma.device) 
+        context = torch.arange(seq_len, dtype=torch.float32).unsqueeze(-1).to(self.gamma.device)
         rel_pos = (memory - context).abs()
 
         return rel_pos.unsqueeze(0).expand(self.num_attention_heads, -1, -1).clone()

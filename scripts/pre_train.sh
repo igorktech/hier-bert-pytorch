@@ -3,7 +3,6 @@
 PROJECT_DIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")/../")
 
 export PYTHONPATH=$PYTHONPATH:$PROJECT_DIR
-export TOKENIZERS_PARALLELISM=false
 
 MODEL_TYPE='hibial'
 LAYOUT='i3'
@@ -21,7 +20,7 @@ python3 "$PROJECT_DIR/pre_training/generate_model.py" \
   --model_type_prefix "$MODEL_TYPE"
 
 # Run pre_training
-python3 "$PROJECT_DIR/pre_training/run_mlm.py" \
+accelerate launch "$PROJECT_DIR/pre_training/run_mlm.py" \
   --model_name_or_path "$MODEL_DIR" \
   --train_file "$TRAIN_FILE_PATH" \
   --do_train \
