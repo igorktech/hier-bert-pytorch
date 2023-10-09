@@ -339,7 +339,7 @@ class HierBert(Module):
                 # Shared encoders or Segment-wise encoders
                 # print("SWE")
                 enc_inp, att_w = layer(enc_inp,
-                                       src_key_padding_mask=src_key_padding_mask,
+                                       # src_key_padding_mask=src_key_padding_mask,
                                        src_mask=enc_mask_utt.repeat(self.config.num_attention_heads, 1, 1))
             else:
                 # Positional Embedding for Context Encoder if few connected CSE  use it before
@@ -347,7 +347,7 @@ class HierBert(Module):
                 # Context encoder or Cross-segment encoders
                 # print("CSE")
                 enc_inp, att_w = layer(enc_inp,
-                                       src_key_padding_mask=src_key_padding_mask,
+                                       # src_key_padding_mask=src_key_padding_mask,
                                        src_mask=enc_mask_ct.repeat(self.config.num_attention_heads, 1, 1))
             if output_attentions:
                 all_self_attentions = all_self_attentions + (att_w,)
