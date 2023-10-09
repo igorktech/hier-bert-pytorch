@@ -361,13 +361,13 @@ class HiBiAlBert(Module):
                 # Shared encoders or Segment-wise encoders
                 # print("SWE")
                 enc_inp, att_w = layer(enc_inp,
-                                       src_key_padding_mask=src_key_padding_mask,
+                                       # src_key_padding_mask=src_key_padding_mask,
                                        src_mask=bialibi_utt_mask)
             else:
                 # Context encoder or Cross-segment encoders
                 # print("CSE")
                 enc_inp, att_w = layer(enc_inp,
-                                       src_key_padding_mask=src_key_padding_mask,
+                                       # src_key_padding_mask=src_key_padding_mask,
                                        src_mask=bialibi_ct_mask)
             if output_attentions:
                 all_self_attentions = all_self_attentions + (att_w,)
